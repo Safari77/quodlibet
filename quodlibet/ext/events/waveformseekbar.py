@@ -123,7 +123,7 @@ class WaveformSeekBar(Gtk.Box):
         command_template = """
         uridecodebin name=uridec
         ! audioconvert
-        ! level name=audiolevel interval={} post-messages=true
+        ! ebur128 name=ebur128 momentary=true interval={} post-messages=true window=5000 sample-peak=false true-peak=false
         ! fakesink sync=false"""
         interval = int(song("~#length") * 1e9 / points)
         if not interval:
@@ -151,14 +151,16 @@ class WaveformSeekBar(Gtk.Box):
             print_d(f"Debugging information: {debug}")
         elif message.type == Gst.MessageType.ELEMENT:
             structure = message.get_structure()
-            if structure.get_name() == "level":
-                rms_db = structure.get_value("rms")
+            if structure.get_name() == "loudness":
+                rms_db = structure.get_value("momentary")
                 if rms_db:
                     # Calculate average of all channels (usually 2)
-                    rms_db_avg = sum(rms_db) / len(rms_db)
+                    if isinstance(rms_db, (list, tuple)):
+                        rms_db_avg = sum(rms_db) / len(rms_db)
+                    else:  # rms_db is a single float (ebur128)
+                        rms_db_avg = rms_db
                     # Normalize dB value to value between 0 and 1
-                    rms = pow(10, (rms_db_avg / 20))
-                    self._new_rms_vals.append(rms)
+                    self._new_rms_vals.append(pow(10, (rms_db_avg / 20)))
                     if len(self._new_rms_vals) >= points:
                         # The audio might be much longer than we anticipated
                         # and we would get way too many events due to the too
