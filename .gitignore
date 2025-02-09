@@ -13,6 +13,8 @@ MANIFEST
 .DS_Store
 *.egg-info
 *.exe
+*~
+.*.sw?
 
 po/missing
 po/notexist
