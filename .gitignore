@@ -64,3 +64,4 @@ venv/
 
 # Direnv
 .direnv
+.env
